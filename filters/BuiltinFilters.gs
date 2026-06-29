@@ -1,18 +1,25 @@
 var BuiltinFilters = (function () {
+  function getLocale() {
+    return __MeowMailConfig.locale || 'id-ID';
+  }
+
   function init() {
     FilterRegistry.register('date', function (value, format) {
       if (value === null || value === undefined || value === '') return '';
+      var d;
       if (value instanceof Date) {
-        var d = value;
+        d = value;
       } else {
-        var d = new Date(value);
+        d = new Date(value);
         if (isNaN(d.getTime())) return String(value);
       }
       if (format) {
         return Utilities.formatDate(d, Session.getScriptTimeZone(), format);
       }
       var day = d.getDate();
-      var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+      var monthNames = {
+        'id-ID': ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des']
+      }[getLocale()] || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       var month = monthNames[d.getMonth()];
       var year = d.getFullYear();
       return day + ' ' + month + ' ' + year;
@@ -21,7 +28,9 @@ var BuiltinFilters = (function () {
     FilterRegistry.register('currency', function (value) {
       var num = Number(value);
       if (isNaN(num)) return String(value);
-      return 'Rp ' + num.toLocaleString('id-ID');
+      var locale = getLocale();
+      var symbol = locale === 'id-ID' ? 'Rp ' : '$';
+      return symbol + num.toLocaleString(locale);
     });
 
     FilterRegistry.register('upper', function (value) {
