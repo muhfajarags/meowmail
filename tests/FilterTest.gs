@@ -84,6 +84,15 @@ function testFilter_custom() {
   Logger.log('  PASS');
 }
 
+function testFilter_currencyWithConfig() {
+  Logger.log('testFilter_currencyWithConfig');
+  __MeowMailConfig.locale = 'en-US';
+  var result = FilterRegistry.apply('currency', 150000);
+  assert(result.indexOf('$') === 0);
+  __MeowMailConfig.locale = 'id-ID';
+  Logger.log('  PASS');
+}
+
 function runFilterTests() {
   Logger.log('=== Filter Tests ===');
   testFilter_upper();
@@ -98,6 +107,7 @@ function runFilterTests() {
   testFilter_json();
   testFilter_unknown();
   testFilter_custom();
+  testFilter_currencyWithConfig();
   Logger.log('=== All Filter Tests Passed ===');
 }
 
@@ -105,6 +115,7 @@ function runAllTests() {
   runParserTests();
   runRendererTests();
   runFilterTests();
+  runBatchSenderTests();
   Logger.log('=== ALL TESTS PASSED ===');
 }
 

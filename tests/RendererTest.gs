@@ -155,6 +155,19 @@ function testRenderer_plainTextFallback() {
   Logger.log('  PASS');
 }
 
+function testCompiler_cacheBounded() {
+  Logger.log('testCompiler_cacheBounded');
+  Compiler.clearCache();
+  Compiler.setMaxCache(3);
+  Compiler.compile('tpl1');
+  Compiler.compile('tpl2');
+  Compiler.compile('tpl3');
+  Compiler.compile('tpl4');
+  assertEqual(Compiler.compile('tpl1').tree.type, 'ROOT');
+  Compiler.setMaxCache(50);
+  Logger.log('  PASS');
+}
+
 function runRendererTests() {
   Logger.log('=== Renderer Tests ===');
   testRenderer_basicPlaceholder();
@@ -174,6 +187,7 @@ function runRendererTests() {
   testRenderer_filteredOutput();
   testRenderer_filterChain();
   testRenderer_plainTextFallback();
+  testCompiler_cacheBounded();
   Logger.log('=== All Renderer Tests Passed ===');
 }
 

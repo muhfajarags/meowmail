@@ -134,6 +134,25 @@ function testSheetReader_skipsEmptyRows() {
   Logger.log('  PASS');
 }
 
+function testBatchSender_validateEmail() {
+  Logger.log('testBatchSender_validateEmail');
+  var batch = new BatchSender();
+  var builder = MeowMail.create('test');
+  var result = batch.send(builder, {
+    source: [
+      { email: 'invalid', nama: 'Bad' },
+      { email: 'valid@test.com', nama: 'Good' },
+      { email: '', nama: 'Empty' }
+    ],
+    toColumn: 'email',
+    delay: 0,
+    validateEmail: true
+  });
+  assertEqual(result.failed, 2);
+  assertEqual(result.sent, 1);
+  Logger.log('  PASS');
+}
+
 function runBatchSenderTests() {
   Logger.log('=== BatchSender Tests ===');
   testBatchSender_emptySource();
@@ -142,6 +161,7 @@ function runBatchSenderTests() {
   testBatchSender_callbacks();
   testSheetReader_simple();
   testSheetReader_skipsEmptyRows();
+  testBatchSender_validateEmail();
   Logger.log('=== All BatchSender Tests Passed ===');
 }
 
