@@ -1,13 +1,3 @@
-function RenderError(message) {
-  this.name = 'RenderError';
-  this.message = message || '';
-  if (Error.captureStackTrace) {
-    Error.captureStackTrace(this, RenderError);
-  }
-}
-RenderError.prototype = Object.create(Error.prototype);
-RenderError.prototype.constructor = RenderError;
-
 var Renderer = (function () {
   function render(node, data, escapeHtml) {
     if (data === null || data === undefined) data = {};

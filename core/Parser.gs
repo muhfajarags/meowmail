@@ -1,13 +1,3 @@
-function TemplateError(message) {
-  this.name = 'TemplateError';
-  this.message = message || '';
-  if (Error.captureStackTrace) {
-    Error.captureStackTrace(this, TemplateError);
-  }
-}
-TemplateError.prototype = Object.create(Error.prototype);
-TemplateError.prototype.constructor = TemplateError;
-
 var Parser = (function () {
   var TAG_OPEN = '{{';
   var TAG_CLOSE = '}}';

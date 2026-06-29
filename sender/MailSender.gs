@@ -1,13 +1,3 @@
-function SendError(message) {
-  this.name = 'SendError';
-  this.message = message || '';
-  if (Error.captureStackTrace) {
-    Error.captureStackTrace(this, SendError);
-  }
-}
-SendError.prototype = Object.create(Error.prototype);
-SendError.prototype.constructor = SendError;
-
 var MailSender = (function () {
   function MailSender() {}
 
@@ -31,11 +21,13 @@ var MailSender = (function () {
     }
 
     var lastError = null;
-    var retries = opts.retries !== undefined ? opts.retries : 1;
+    var retries = opts.retries !== undefined ? opts.retries : (__MeowMailConfig.maxRetries || 1);
 
     for (var attempt = 0; attempt <= retries; attempt++) {
       if (attempt > 0) {
-        Utilities.sleep(1000);
+        var backoff = Math.pow(2, attempt - 1) * 1000;
+        var jitter = Math.random() * 500;
+        Utilities.sleep(backoff + jitter);
       }
       try {
         if (params.from) {
@@ -57,6 +49,7 @@ var MailSender = (function () {
         return { success: true, to: opts.to };
       } catch (e) {
         lastError = e;
+        MeowMailLogger.warn('Send attempt %s failed for %s: %s', attempt + 1, opts.to, e.message);
       }
     }
 
