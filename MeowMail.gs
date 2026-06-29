@@ -6,12 +6,20 @@ var __MeowMailConfig = {
   quotaBuffer: 10,
   escapeHtml: true,
   locale: 'id-ID',
-  logLevel: 'INFO'
+  logLevel: 'INFO',
+  maxRetries: 1,
+  validateEmail: false,
+  maxCache: 50
 };
 
 var MeowMail = (function () {
   BuiltinFilters.init();
+  MeowMailLogger.setLevel(__MeowMailConfig.logLevel);
 
+  /**
+   * @param {string} templateStr
+   * @constructor
+   */
   function TemplateBuilder(templateStr) {
     this.templateStr = templateStr;
     this.subjectStr = '';
@@ -19,21 +27,37 @@ var MeowMail = (function () {
     this.replyToAddr = null;
   }
 
+  /**
+   * @param {string} str
+   * @returns {TemplateBuilder}
+   */
   TemplateBuilder.prototype.subject = function (str) {
     this.subjectStr = str;
     return this;
   };
 
+  /**
+   * @param {string} addr
+   * @returns {TemplateBuilder}
+   */
   TemplateBuilder.prototype.from = function (addr) {
     this.fromAddr = addr;
     return this;
   };
 
+  /**
+   * @param {string} addr
+   * @returns {TemplateBuilder}
+   */
   TemplateBuilder.prototype.replyTo = function (addr) {
     this.replyToAddr = addr;
     return this;
   };
 
+  /**
+   * @param {Object} data
+   * @returns {Object}
+   */
   TemplateBuilder.prototype.send = function (data) {
     if (!data) throw new SendError('Data is required');
     if (!data.to) throw new SendError('Recipient email is required');
@@ -59,6 +83,10 @@ var MeowMail = (function () {
     });
   };
 
+  /**
+   * @param {Object} opts
+   * @returns {Object}
+   */
   TemplateBuilder.prototype.sendBatch = function (opts) {
     opts = opts || {};
     if (opts.delay === undefined && __MeowMailConfig.defaultDelay) {
@@ -68,6 +96,10 @@ var MeowMail = (function () {
     return batch.send(this, opts);
   };
 
+  /**
+   * @param {Object} data
+   * @returns {{html: string, text: string, subject: string}}
+   */
   TemplateBuilder.prototype.preview = function (data) {
     if (!data) data = {};
     var compiled = Compiler.compile(this.templateStr);
@@ -84,10 +116,17 @@ var MeowMail = (function () {
   };
 
   var api = {
+    /**
+     * @param {string} templateStr
+     * @returns {TemplateBuilder}
+     */
     create: function (templateStr) {
       return new TemplateBuilder(templateStr);
     },
 
+    /**
+     * @param {Object} opts
+     */
     configure: function (opts) {
       if (!opts) return;
       for (var key in opts) {
@@ -95,8 +134,14 @@ var MeowMail = (function () {
           __MeowMailConfig[key] = opts[key];
         }
       }
+      if (opts.logLevel) MeowMailLogger.setLevel(opts.logLevel);
+      if (opts.maxCache) Compiler.setMaxCache(opts.maxCache);
     },
 
+    /**
+     * @param {string} name
+     * @param {Function} fn
+     */
     registerFilter: function (name, fn) {
       FilterRegistry.register(name, fn);
     }

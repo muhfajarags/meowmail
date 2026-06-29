@@ -1,4 +1,6 @@
 var BatchSender = (function () {
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   function BatchSender() {}
 
   BatchSender.prototype.send = function (builder, opts) {
@@ -18,9 +20,10 @@ var BatchSender = (function () {
     }
 
     var toColumn = opts.toColumn || 'email';
-    var delayMs = opts.delay !== undefined ? opts.delay : 200;
+    var delayMs = opts.delay !== undefined ? opts.delay : (__MeowMailConfig.defaultDelay || 200);
     var maxPerRun = opts.maxPerRun || __MeowMailConfig.maxPerRun || 100;
     var quotaBuffer = opts.quotaBuffer || __MeowMailConfig.quotaBuffer || 10;
+    var validateEmail = opts.validateEmail !== undefined ? opts.validateEmail : (__MeowMailConfig.validateEmail || false);
     var onSuccess = typeof opts.onSuccess === 'function' ? opts.onSuccess : null;
     var onError = typeof opts.onError === 'function' ? opts.onError : null;
 
@@ -33,8 +36,8 @@ var BatchSender = (function () {
 
     var capped = Math.min(rows.length, maxPerRun);
     if (capped < rows.length) {
-      Logger.log(
-        '[MeowMail] Batch truncated: ' + rows.length + ' rows limited to ' + maxPerRun + ' (maxPerRun)'
+      MeowMailLogger.warn(
+        'Batch truncated: %s rows limited to %s (maxPerRun)', rows.length, maxPerRun
       );
     }
 
@@ -56,14 +59,23 @@ var BatchSender = (function () {
         continue;
       }
 
+      if (validateEmail && !EMAIL_RE.test(recipient)) {
+        failed++;
+        var err = new SendError('Invalid email format in row ' + (i + 1) + ': ' + recipient);
+        errors.push({ row: row, error: err });
+        if (onError) onError(row, err);
+        continue;
+      }
+
       remaining = MailApp.getRemainingDailyQuota();
       if (remaining <= quotaBuffer) {
-        Logger.log('[MeowMail] Quota low (' + remaining + '), stopping batch at row ' + (i + 1));
+        MeowMailLogger.warn('Quota low (%s), stopping batch at row %s', remaining, i + 1);
         break;
       }
 
       if (i > 0 && delayMs > 0) {
-        Utilities.sleep(delayMs);
+        var jitter = Math.random() * delayMs * 0.3;
+        Utilities.sleep(delayMs + jitter);
       }
 
       var rowData = {};
